@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "SlopFilter · AI 水文过滤",
+  "short_name": "SlopFilter",
+  "version": "1.0.0",
+  "description": "用 Jev 识别并拦截 X（Twitter）上的 AI 生成水文，并显示拦截了多少条。",
+  "minimum_chrome_version": "120",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "SlopFilter",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.typesafe.ai/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*", "https://mobile.x.com/*", "https://mobile.twitter.com/*"],
+      "js": ["src/shared.js", "src/heuristics.js", "src/spring.js", "src/ui.js", "src/content.js"],
+      "css": ["src/page.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

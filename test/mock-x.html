@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock X timeline</title>
+<link rel="stylesheet" href="/src/page.css">
+<style>
+  :root { --bg: #fff; --fg: #0f1419; --muted: #536471; --line: #eff3f4; --hover: rgba(0,0,0,.03); --chip: #f7f9f9; }
+  body.dim { --bg: rgb(21, 32, 43); --fg: #f7f9f9; --muted: #8b98a5; --line: #38444d; --hover: rgba(255,255,255,.03); --chip: #1e2732; }
+  body.black { --bg: #000; --fg: #e7e9ea; --muted: #71767b; --line: #2f3336; --hover: rgba(255,255,255,.03); --chip: #16181c; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 15px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
+  .mockbar { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; align-items: center; padding: 8px 16px; background: #1c1c1e; color: #fff; font-size: 12px; }
+  .mockbar button { border: 0; border-radius: 6px; padding: 4px 10px; background: #3a3a3c; color: #fff; font: inherit; cursor: pointer; }
+  .mockbar .ext { display: inline-flex; align-items: center; gap: 6px; background: #2c2c2e; }
+  .mockbar .ext img { width: 16px; height: 16px; }
+  .badge { min-width: 16px; padding: 0 4px; border-radius: 8px; background: #fff; color: #000; font-weight: 700; font-size: 10px; line-height: 16px; text-align: center; }
+  .badge:empty { display: none; }
+  .layout { display: grid; grid-template-columns: 260px 600px 350px; justify-content: center; }
+  .left { position: sticky; top: 40px; height: calc(100vh - 40px); padding: 12px; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+  .left .logo { font-size: 28px; font-weight: 800; padding: 8px 12px 20px; }
+  .left .nav { font-size: 20px; padding: 12px; }
+  .acct { margin-top: auto; display: flex; gap: 10px; align-items: center; padding: 12px; border-radius: 99px; }
+  .center { border-right: 1px solid var(--line); min-height: 100vh; }
+  .tabs { position: sticky; top: 40px; z-index: 2; display: flex; backdrop-filter: blur(12px); background: color-mix(in srgb, var(--bg) 85%, transparent); border-bottom: 1px solid var(--line); }
+  .tabs div { flex: 1; text-align: center; padding: 16px; font-weight: 700; }
+  .tabs div + div { color: var(--muted); font-weight: 500; }
+  .cell { border-bottom: 1px solid var(--line); }
+  article { display: flex; gap: 12px; padding: 12px 16px; cursor: pointer; }
+  article:hover { background: var(--hover); }
+  .avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; }
+  .body { flex: 1; min-width: 0; }
+  .user { display: flex; gap: 4px; align-items: center; color: var(--muted); white-space: nowrap; }
+  .user a { color: inherit; text-decoration: none; }
+  .user .name { color: var(--fg); font-weight: 700; display: inline-flex; align-items: center; gap: 2px; }
+  .user svg { width: 18px; height: 18px; color: rgb(29, 155, 240); fill: currentColor; }
+  .replying { color: var(--muted); margin-top: 2px; }
+  .replying a { color: #1d9bf0; text-decoration: none; }
+  .text { margin-top: 2px; white-space: pre-wrap; word-wrap: break-word; }
+  .actions { display: flex; justify-content: space-between; max-width: 425px; margin-top: 12px; color: var(--muted); font-size: 13px; }
+  .focal .text { font-size: 17px; line-height: 24px; }
+  .right { padding: 12px 24px; }
+  .search { height: 42px; border-radius: 99px; background: var(--chip); padding: 0 16px; display: flex; align-items: center; color: var(--muted); }
+  .card { margin-top: 16px; border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; font-size: 13px; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; }
+  .card pre { margin: 0; max-height: 300px; overflow: auto; font-size: 11px; line-height: 15px; white-space: pre-wrap; color: var(--muted); }
+  .log { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--muted); max-height: 160px; overflow: auto; }
+  .dm { position: fixed; right: 20px; bottom: 0; width: 400px; height: 53px; border-radius: 16px 16px 0 0; background: var(--bg); box-shadow: 0 0 15px rgba(101,119,134,.2); display: flex; align-items: center; padding: 0 16px; font-weight: 800; font-size: 20px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1d9bf0; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  html[data-demo] .card, html[data-demo] .mockbar { display: none; }
+  html[data-demo] .left, html[data-demo] .tabs { top: 0; }
+</style>
+</head>
+<body>
+<div class="mockbar">
+  <span>Mock X ·</span>
+  <button data-theme="">Light</button>
+  <button data-theme="dim">Dim</button>
+  <button data-theme="black">Lights out</button>
+  <span style="flex:1"></span>
+  <a href="?view=home" style="color:#fff">home</a>
+  <a href="?view=thread" style="color:#fff">thread</a>
+  <button id="reset">reset storage</button>
+  <button class="ext" id="toolbar" title="toolbar icon"><img src="/icons/icon32.png" alt=""><span class="badge" id="badge"></span></button>
+</div>
+<div id="react-root">
+  <div class="layout">
+    <nav class="left">
+      <div class="logo">𝕏</div>
+      <div class="nav">Home</div><div class="nav">Explore</div><div class="nav">Notifications</div><div class="nav">Messages</div>
+      <div class="acct" data-testid="SideNav_AccountSwitcher_Button"><div class="avatar" style="background:#7856ff"></div><div><b>Me</b><div style="color:var(--muted)">@me_here</div></div></div>
+    </nav>
+    <main class="center">
+      <div class="tabs"><div>For you</div><div>Following</div></div>
+      <section aria-label="Timeline"><div id="timeline"></div></section>
+    </main>
+    <aside class="right">
+      <div class="search">Search</div>
+      <div class="card"><h3>Mock Jev</h3><div id="calls">0 calls</div><div class="log" id="log"></div></div>
+      <div class="card"><h3>Last request body</h3><pre id="req">–</pre></div>
+    </aside>
+  </div>
+</div>
+<div class="dm">Messages</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { SAMPLES } from '/test/samples.mjs';
+  import { installChrome } from '/test/mock-chrome.js';
+
+  const params = new URLSearchParams(location.search);
+  // On https://x.com (the e2e test) the real extension is injected by Chrome.
+  const real = /(^|\.)(x|twitter)\.com$/.test(location.hostname);
+  const view = params.get('view') || (location.pathname.includes('/status/') ? 'thread' : 'home');
+  if (params.get('theme')) document.body.className = params.get('theme');
+  if (params.has('fresh')) localStorage.removeItem('sf-mock-storage');
+  if (params.has('demo')) document.documentElement.dataset.demo = ''; // no debug chrome, for recordings
+
+  // Test-only: open shadow roots so the UI can be inspected, and ?slowmo=N
+  // to play every spring N times slower.
+  const attach = Element.prototype.attachShadow;
+  Element.prototype.attachShadow = function (init) { return attach.call(this, { ...init, mode: 'open' }); };
+  const slow = Number(params.get('slowmo')) || 1;
+  if (slow > 1) {
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (cb) => raf((t) => cb(t / slow));
+  }
+
+  const VERIFIED = '<svg viewBox="0 0 22 22" data-testid="icon-verified"><path d="M20.4 11c0-1.4-.8-2.6-2-3.2.4-1.3.1-2.8-.9-3.8s-2.4-1.3-3.8-.9C13.1 1.9 12 1.1 11 1.1S8.9 1.9 8.3 3.1c-1.3-.4-2.8-.1-3.8.9s-1.3 2.4-.9 3.8C2.4 8.4 1.6 9.6 1.6 11s.8 2.6 2 3.2c-.4 1.3-.1 2.8.9 3.8s2.4 1.3 3.8.9c.6 1.2 1.8 2 3.2 2s2.6-.8 3.2-2c1.3.4 2.8.1 3.8-.9s1.3-2.4.9-3.8c1.2-.6 2-1.8 2-3.2zm-11 4.4-3.7-3.7 1.4-1.4 2.3 2.3 5-5 1.4 1.4-6.4 6.4z"/></svg>';
+
+  function el(tag, attrs = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    for (const k of kids) n.append(k);
+    return n;
+  }
+
+  function tweet(s, { focal = false } = {}) {
+    const name = el('a', { href: `/${s.handle}`, class: 'name' }, el('span', {}, s.name));
+    if (s.verified) name.insertAdjacentHTML('beforeend', VERIFIED);
+    const user = el('div', { 'data-testid': 'User-Name', class: 'user' },
+      name, el('a', { href: `/${s.handle}` }, el('span', {}, `@${s.handle}`)), el('span', {}, '·'),
+      el('a', { href: `/${s.handle}/status/${s.id}` }, el('time', { datetime: '2026-10-30T08:00:00Z' }, '2h')));
+    const body = el('div', { class: 'body' }, user);
+    if (s.reply && view === 'home') body.append(el('div', { class: 'replying' }, 'Replying to ', el('a', { href: '/someone' }, '@someone')));
+    body.append(el('div', { 'data-testid': 'tweetText', lang: s.lang || 'en', class: 'text' }, el('span', {}, s.text)));
+    body.append(el('div', { role: 'group', class: 'actions' }, el('span', {}, '💬 12'), el('span', {}, '🔁 4'), el('span', {}, '♡ 88'), el('span', {}, '📊 3.1K'), el('span', {}, '↗')));
+    const hue = [...s.handle].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+    const article = el('article', { 'data-testid': 'tweet', role: 'article', tabindex: '0', class: focal ? 'focal' : '' },
+      el('div', { class: 'avatar', style: `background: hsl(${hue} 55% 55%)` }), body);
+    article.addEventListener('click', () => toast(`X would open /${s.handle}/status/${s.id}`));
+    return el('div', { 'data-testid': 'cellInnerDiv' }, el('div', { class: 'cell' }, article));
+  }
+
+  const timeline = document.getElementById('timeline');
+  if (view === 'thread') {
+    const focal = { id: '1850000000000000100', handle: 'buildinpublic', name: 'Lena', text: SAMPLES[0].parent };
+    history.replaceState(null, '', `/${focal.handle}/status/${focal.id}${location.search}`);
+    timeline.append(tweet(focal, { focal: true }));
+    for (const s of SAMPLES.filter((s) => s.reply || ['1850000000000000009', '1850000000000000003'].includes(s.id))) timeline.append(tweet(s));
+  } else {
+    for (const s of SAMPLES) timeline.append(tweet(s));
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  if (real) {
+    document.getElementById('calls').textContent = 'real extension (e2e)';
+    for (const b of document.querySelectorAll('[data-theme]')) b.addEventListener('click', () => (document.body.className = b.dataset.theme));
+    throw new Error('stop: real extension mode');
+  }
+
+  const logEl = document.getElementById('log');
+  const shim = installChrome({
+    samples: SAMPLES,
+    onLog: (line) => {
+      logEl.prepend(el('div', {}, line));
+      document.getElementById('calls').textContent = `${shim.calls} calls`;
+      if (shim.lastRequest) document.getElementById('req').textContent = JSON.stringify(shim.lastRequest, null, 2);
+    },
+    onBadge: (text) => (document.getElementById('badge').textContent = text),
+  });
+  window.__shim = shim;
+
+  for (const b of document.querySelectorAll('[data-theme]')) b.addEventListener('click', () => (document.body.className = b.dataset.theme));
+  document.getElementById('toolbar').addEventListener('click', () => shim.clickAction());
+  document.getElementById('reset').addEventListener('click', () => { localStorage.removeItem('sf-mock-storage'); location.href = location.pathname.includes('/status/') ? '/test/mock-x.html?view=thread' : location.href; });
+
+  const load = (src) => new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error(`failed to load ${src}`));
+    document.head.append(s);
+  });
+
+  const base = '/src/';
+  await load(base + 'shared.js');
+  shim.context = 'background';
+  await load(base + 'prompt.js');
+  await load(base + 'background.js');
+  shim.context = 'content';
+  for (const f of ['heuristics.js', 'spring.js', 'ui.js', 'content.js']) await load(base + f);
+</script>
+</body>
+</html>

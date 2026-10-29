@@ -1,0 +1,9 @@
+test/out/
+.DS_Store
+.claude/
+.env
+.env.*
+!.env.example
+node_modules/
+__pycache__/
+*.py[cod]
